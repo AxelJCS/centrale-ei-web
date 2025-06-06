@@ -8,8 +8,9 @@ import GENRES from './genres';
 import axios from 'axios';
 import './Home.css';
 
+localStorage.removeItem('introEnded'); // Force l'affichage de l'intro à chaque F5
+
 function Home({ userId, setUserId }) {
-  // State unique
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [type, setType] = useState('movie');
@@ -20,9 +21,11 @@ function Home({ userId, setUserId }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [randomMovie, setRandomMovie] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [likedGenres, setLikedGenres] = useState([]);
 
-  const moviesPerSlide = 7;
+  // Carrousel 2 rangées
+  const moviesPerRow = 7;
+  const rowsCount = 2;
+  const moviesPerSlide = moviesPerRow * rowsCount;
 
   // Splash screen
   useEffect(() => {
@@ -43,12 +46,28 @@ function Home({ userId, setUserId }) {
     setCurrentSlide(0);
   }, [searchTerm, type, genre, showSuggestions]);
 
+  // Suggestions personnalisées selon les films notés
+  function getUserPreferredGenres() {
+    const rated = JSON.parse(localStorage.getItem('rated_movies') || '[]');
+    if (rated.length === 0) return [];
+    const genreCount = {};
+    rated.forEach(f => {
+      (f.genre_ids || []).forEach(gid => {
+        genreCount[gid] = (genreCount[gid] || 0) + 1;
+      });
+    });
+    return Object.entries(genreCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(([gid]) => gid);
+  }
+
   // Fetch movies
   const { items, loading, error } = useFetchMovies(
     searchTerm,
     page,
     type,
-    showSuggestions && likedGenres.length > 0 ? likedGenres[0] : genre
+    showSuggestions && getUserPreferredGenres().length > 0 ? getUserPreferredGenres().join(',') : genre
   );
 
   // Filter items
@@ -61,50 +80,13 @@ function Home({ userId, setUserId }) {
     return true;
   });
 
-  // Carousel calculations
+  // Carousel calculations pour 2 rangées
   const totalSlides = Math.max(1, Math.ceil(filteredItems.length / moviesPerSlide));
   const startIdx = currentSlide * moviesPerSlide;
   const endIdx = startIdx + moviesPerSlide;
   const visibleMovies = filteredItems.slice(startIdx, endIdx);
 
-  // Handlers
-  function handleLoadMore() {
-    setShowVideo(true);
-  }
-  function handleCloseVideo() {
-    setShowVideo(false);
-    setPage((p) => p + 1);
-  }
-  function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-  function handleRandomMovie() {
-    if (filteredItems.length > 0) {
-      const random = filteredItems[Math.floor(Math.random() * filteredItems.length)];
-      setRandomMovie(random);
-      setTimeout(() => setRandomMovie(null), 3500);
-    }
-  }
-  function handleShowSuggestions() {
-    let newLikedGenres = [...likedGenres];
-    if (genre && !newLikedGenres.includes(genre)) {
-      newLikedGenres = [...newLikedGenres, genre];
-      if (newLikedGenres.length > 3) newLikedGenres = newLikedGenres.slice(-3);
-      setLikedGenres(newLikedGenres);
-    }
-    setShowSuggestions(true);
-    setCurrentSlide(0);
-  }
-  function handleShowPopular() {
-    setShowSuggestions(false);
-    setGenre('');
-    setCurrentSlide(0);
-  }
-  function handleIntroEnd() {
-    setIntroEnded(true);
-    localStorage.setItem('introEnded', 'true');
-  }
-
+  // Genres
   const MOVIE_GENRE_IDS = [
     28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37
   ];
@@ -116,7 +98,48 @@ function Home({ userId, setUserId }) {
     genreIdsToShow.includes(Number(id))
   );
 
-  // Dark overlay for random movie
+  // Splash screen end
+  function handleIntroEnd() {
+    setIntroEnded(true);
+    localStorage.setItem('introEnded', 'true');
+  }
+
+  // Surprise video
+  function handleLoadMore() {
+    setShowVideo(true);
+  }
+  function handleCloseVideo() {
+    setShowVideo(false);
+    setPage((p) => p + 1);
+  }
+
+  // Scroll to top
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Movie aléatoire
+  function handleRandomMovie() {
+    if (filteredItems.length > 0) {
+      const random = filteredItems[Math.floor(Math.random() * filteredItems.length)];
+      setRandomMovie(random);
+      setTimeout(() => setRandomMovie(null), 3500);
+    }
+  }
+
+  // Suggestions utilisateur
+  function handleShowSuggestions() {
+    setShowSuggestions(true);
+    setCurrentSlide(0);
+  }
+
+  function handleShowPopular() {
+    setShowSuggestions(false);
+    setGenre('');
+    setCurrentSlide(0);
+  }
+
+  // Overlay random movie
   const randomMovieOverlay = randomMovie && (
     <div
       style={{
@@ -176,19 +199,49 @@ function Home({ userId, setUserId }) {
         overflowX: 'hidden',
       }}
     >
-      {/* Header fixe */}
+
+      {/* Splash screen */}
+      {!introEnded && (
+        <video
+          autoPlay
+          muted
+          playsInline
+          onEnded={handleIntroEnd}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: 9999,
+            backgroundColor: 'black',
+            animation: 'fadeOut 1s ease forwards',
+            animationDelay: '0.5s',
+          }}
+        >
+          <source src={introVideo} type="video/mp4" />
+          Votre navigateur ne supporte pas les vidéos HTML5.
+        </video>
+      )}
+
+      {/* Overlay random movie */}
+      {randomMovieOverlay}
+
+      {/* Header */}
       <header
         style={{
           position: 'fixed',
           top: 0,
           left: 0,
+          width: '100vw',
           display: 'flex',
           alignItems: 'center',
           gap: '20px',
-          padding: '10px 20px',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: '10px 40px 10px 20px',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
           zIndex: 1000,
-          transform: 'translateX(4cm)',
+          boxShadow: '0 2px 16px rgba(229, 9, 20, 0.25)',
           height: '60px',
         }}
       >
@@ -232,35 +285,31 @@ function Home({ userId, setUserId }) {
           >
             Séries TV
           </button>
+          <button
+            onClick={handleRandomMovie}
+            style={{
+              padding: '8px 22px',
+              borderRadius: '30px',
+              background: 'linear-gradient(90deg, #FFD700 60%, #e50914 100%)',
+              color: '#1e1e2f',
+              fontWeight: 'bold',
+              fontSize: '1.1rem',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 12px #FFD70040',
+              transition: 'background 0.2s, transform 0.2s',
+              letterSpacing: '1px',
+              marginLeft: '20px'
+            }}
+            onMouseOver={e => e.currentTarget.style.transform = 'scale(1.08)'}
+            onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            🎲 Surprise
+          </button>
         </div>
       </header>
 
-      {/* Vidéo d’intro */}
-      {!introEnded && (
-        <video
-          autoPlay
-          muted
-          playsInline
-          onEnded={handleIntroEnd}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            zIndex: 9999,
-            backgroundColor: 'black',
-            animation: 'fadeOut 1s ease forwards',
-            animationDelay: '0.5s',
-          }}
-        >
-          <source src={introVideo} type="video/mp4" />
-          Votre navigateur ne supporte pas les vidéos HTML5.
-        </video>
-      )}
-
-      {/* Logo en fond */}
+      {/* Logo Netflix en fond */}
       <img
         src={netflixLogo}
         alt="Logo en fond"
@@ -288,9 +337,7 @@ function Home({ userId, setUserId }) {
       </div>
 
       {/* Recommandations personnalisées */}
-       
-     <Recommendations userId={userId} type={type} />
-      
+      <Recommendations userId={userId} type={type} />
 
       {/* Champ de recherche */}
       <div
@@ -406,7 +453,7 @@ function Home({ userId, setUserId }) {
         </p>
       )}
 
-      {/* Carrousel horizontal */}
+      {/* Carrousel horizontal avec 2 rangées */}
       {filteredItems.length > 0 && (
         <div
           style={{
@@ -419,6 +466,7 @@ function Home({ userId, setUserId }) {
             marginBottom: '30px',
           }}
         >
+          {/* Flèche gauche */}
           <button
             onClick={() => setCurrentSlide((prev) => Math.max(prev - 1, 0))}
             disabled={currentSlide === 0}
@@ -436,19 +484,37 @@ function Home({ userId, setUserId }) {
           >
             ◀
           </button>
+
+          {/* Deux rangées de films */}
           <div
             style={{
               display: 'flex',
-              overflow: 'hidden',
-              width: 'calc(7 * 180px + 6 * 20px)',
+              flexDirection: 'column',
               gap: '20px',
+              overflow: 'hidden',
+              width: `calc(${moviesPerRow} * 180px + ${(moviesPerRow - 1)} * 20px)`,
               transition: 'transform 0.5s cubic-bezier(.22,1.12,.58,1)',
             }}
           >
-            {visibleMovies.map((item, idx) => (
-              <Movie key={item.id} movie={item} rank={startIdx + idx + 1} />
+            {[0, 1].map(rowIdx => (
+              <div
+                key={rowIdx}
+                style={{
+                  display: 'flex',
+                  gap: '20px',
+                  width: '100%',
+                }}
+              >
+                {visibleMovies
+                  .slice(rowIdx * moviesPerRow, (rowIdx + 1) * moviesPerRow)
+                  .map((item, idx) => (
+                    <Movie key={item.id} movie={item} rank={startIdx + rowIdx * moviesPerRow + idx + 1} />
+                  ))}
+              </div>
             ))}
           </div>
+
+          {/* Flèche droite */}
           <button
             onClick={() => setCurrentSlide((prev) => Math.min(prev + 1, totalSlides - 1))}
             disabled={currentSlide >= totalSlides - 1}
@@ -604,7 +670,7 @@ function Recommendations({ userId, type }) {
   }, [userId, type]);
   return (
     <div>
-      <h2>Recommandé pour vous ({type === 'movie' ? 'Films' : 'Séries TV'})</h2>
+      <h2>Aimés par vos amis ({type === 'movie' ? 'Films' : 'Séries TV'})</h2>
       <div style={{ display: 'flex', gap: 20 }}>
         {reco.map(movie => (
           <Movie key={movie.id} movie={movie} />
