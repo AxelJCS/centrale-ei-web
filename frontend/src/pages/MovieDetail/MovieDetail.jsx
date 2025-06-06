@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-function MovieDetail({ userId }) {
+function MovieDetail({ userId, userName }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
@@ -60,7 +60,7 @@ function MovieDetail({ userId }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (rating === 0 && comment.trim() === '') return;
-    // Envoie en BDD
+    // Envoie en BDD (optionnel)
     axios.post('http://localhost:8000/ratings', {
       user_id: userId,
       movie_id: movie.id,
@@ -72,10 +72,14 @@ function MovieDetail({ userId }) {
         text: comment,
         rating,
         date: new Date().toLocaleString(),
+        userId: userId,
+        userName: userName || 'Utilisateur inconnu',
       };
       setComments([newComment, ...comments]);
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 2000);
+      setComment('');
+      setRating(0);
     });
   };
 
@@ -97,9 +101,8 @@ function MovieDetail({ userId }) {
     );
   }
 
-  
   const isSerie = movie.type === 'tv' || movie.media_type === 'tv';
-  
+
   return (
     <div
       style={{
@@ -112,9 +115,6 @@ function MovieDetail({ userId }) {
         overflow: 'hidden'
       }}
     >
-      {/* ... Effets visuels et header ... */}
-
-      {/* Bouton retour */}
       <button
         onClick={() => {
           localStorage.setItem('introEnded', 'true');
@@ -142,7 +142,6 @@ function MovieDetail({ userId }) {
         ← Retour à l'accueil
       </button>
 
-      {/* Contenu principal */}
       <div
         style={{
           display: 'flex',
@@ -155,7 +154,6 @@ function MovieDetail({ userId }) {
           zIndex: 2
         }}
       >
-        {/* Affiche du film */}
         {movie.poster_path && (
           <img
             src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
@@ -173,7 +171,6 @@ function MovieDetail({ userId }) {
           />
         )}
 
-        {/* Infos */}
         <div style={{
           maxWidth: '600px',
           background: 'rgba(30,30,47,0.92)',
@@ -240,13 +237,12 @@ function MovieDetail({ userId }) {
             {movie.overview}
           </p>
 
-          {/* Notation étoiles */}
           <div style={{ marginTop: '20px', marginBottom: '10px' }}>
-          <p style={{ marginBottom: '8px', fontWeight: 600, color: '#FFD700', fontSize: '1.1rem' }}>
-            {isSerie
-              ? 'À quel point as-tu apprécié cette série ?'
-              : 'À quel point as-tu apprécié ce film ?'}
-          </p>
+            <p style={{ marginBottom: '8px', fontWeight: 600, color: '#FFD700', fontSize: '1.1rem' }}>
+              {isSerie
+                ? 'À quel point as-tu apprécié cette série ?'
+                : 'À quel point as-tu apprécié ce film ?'}
+            </p>
             <div>
               {[1, 2, 3, 4, 5].map((star) => (
                 <span
@@ -277,8 +273,7 @@ function MovieDetail({ userId }) {
             )}
           </div>
 
-          {/* Commentaire */}
-           <form onSubmit={handleSubmit} style={{ marginTop: '25px' }}>
+          <form onSubmit={handleSubmit} style={{ marginTop: '25px' }}>
             <label htmlFor="comment" style={{
               display: 'block',
               marginBottom: '10px',
@@ -288,8 +283,6 @@ function MovieDetail({ userId }) {
             }}>
               {isSerie ? 'Un commentaire sur la série ?' : 'Un commentaire sur le film ?'}
             </label>
-              
-    
             <textarea
               id="comment"
               value={comment}
@@ -309,7 +302,7 @@ function MovieDetail({ userId }) {
                 boxShadow: '0 2px 8px #0004',
                 transition: 'border 0.2s'
               }}
-               placeholder={isSerie
+              placeholder={isSerie
                 ? "Écris ce que tu as pensé de la série..."
                 : "Écris ce que tu as pensé du film..."}
             />
@@ -341,7 +334,6 @@ function MovieDetail({ userId }) {
             </p>
           )}
 
-          {/* Liste des commentaires */}
           {comments.length > 0 && (
             <div style={{ marginTop: '35px' }}>
               <h3 style={{ color: '#FFD700', marginBottom: '12px' }}>
@@ -365,7 +357,7 @@ function MovieDetail({ userId }) {
                         </span>
                       )}
                       <span style={{ color: '#aaa', fontSize: '0.95em', marginLeft: '8px' }}>
-                        {c.date}
+                        {c.date} - Par : {c.userName || 'Utilisateur inconnu'}
                       </span>
                     </div>
                     <div style={{ whiteSpace: 'pre-line' }}>{c.text}</div>
