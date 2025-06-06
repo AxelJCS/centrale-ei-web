@@ -15,7 +15,7 @@ const User = new typeorm.EntitySchema({
       type: String
     },
     year: {
-      type: String
+      type: String, nullable : true
     },
     overview: { type: 'text',nullable: true },
 

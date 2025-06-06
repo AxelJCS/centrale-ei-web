@@ -281,9 +281,9 @@ function Home({ userId, setUserId }) {
       <div style={{ textAlign: 'center', marginTop: 20 }}>
         <label style={{ marginRight: 10 }}>Utilisateur :</label>
         <select value={userId} onChange={e => setUserId(Number(e.target.value))}>
-          <option value={1}>Alice</option>
-          <option value={2}>Bob</option>
-          <option value={3}>Carol</option>
+          <option value={1}>Rayann</option>
+          <option value={2}>Thomas</option>
+          <option value={3}>Invité</option>
         </select>
       </div>
 
