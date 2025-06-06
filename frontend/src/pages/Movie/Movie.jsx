@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react'; // Ajoute ceci
+import { useState } from 'react'; 
 
 function Movie({ movie, rank }) {
-  // Date au format français, ou vide si pas dispo
+
   const releaseDate = movie.release_date || movie.first_air_date || '';
   const formattedDate = releaseDate
     ? new Date(releaseDate).toLocaleDateString('fr-FR', {
@@ -12,7 +12,7 @@ function Movie({ movie, rank }) {
       })
     : '';
 
-  // Ajoute cet état pour le hover
+
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -30,8 +30,8 @@ function Movie({ movie, rank }) {
           color: 'white',
           boxShadow: '0 0 10px rgba(0,0,0,0.7)',
         }}
-        onMouseEnter={() => setHovered(true)}   // Ajoute ceci
-        onMouseLeave={() => setHovered(false)}  // Ajoute ceci
+        onMouseEnter={() => setHovered(true)}  
+        onMouseLeave={() => setHovered(false)} 
       >
         {rank && (
           <div

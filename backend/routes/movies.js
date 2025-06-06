@@ -21,7 +21,6 @@ router.get('/seed', async (req, res) => {
   const movieRepo = appDataSource.getRepository(Movie);
   await movieRepo.clear();
 
-  // Seed films
   for (let page = 1; page <= 10; page++) {
     const movies = await fetchPopular('movie', page);
     for (const m of movies) {
@@ -38,7 +37,7 @@ router.get('/seed', async (req, res) => {
     }
   }
 
-  // Seed séries TV
+
   for (let page = 1; page <= 10; page++) {
     const shows = await fetchPopular('tv', page);
     for (const s of shows) {
@@ -69,7 +68,6 @@ router.get('/', async (req, res) => {
   }
 
   if (genre_id) {
-    // genre_ids est une string de type "12,18,35"
     query = query.andWhere('movie.genre_ids LIKE :genre', { genre: `%${genre_id}%` });
   }
 

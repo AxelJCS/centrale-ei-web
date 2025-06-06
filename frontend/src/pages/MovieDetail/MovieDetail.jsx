@@ -20,14 +20,12 @@ function MovieDetail({ userId, userName }) {
     10764: 'Reality', 10765: 'Sci-Fi & Fantasy', 10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics'
   };
 
-  // Charger les commentaires depuis le localStorage au chargement du composant
+  // Charger les com
   useEffect(() => {
     const saved = localStorage.getItem(`comments_${id}`);
     if (saved) setComments(JSON.parse(saved));
     else setComments([]);
   }, [id]);
-
-  // Sauvegarder les commentaires à chaque modification
   useEffect(() => {
     localStorage.setItem(`comments_${id}`, JSON.stringify(comments));
   }, [comments, id]);
@@ -39,7 +37,7 @@ function MovieDetail({ userId, userName }) {
       .catch(() => setMovie(null));
   }, [id]);
 
-  // Charger la note et le commentaire de l'utilisateur courant
+  // Charger la note et le commentaire
   useEffect(() => {
     if (!userId || !movie?.id) return;
     axios.get(`http://localhost:8000/ratings?user_id=${userId}&movie_id=${movie.id}`)
@@ -60,14 +58,13 @@ function MovieDetail({ userId, userName }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (rating === 0 && comment.trim() === '') return;
-    // Envoie en BDD (optionnel)
     axios.post('http://localhost:8000/ratings', {
       user_id: userId,
       movie_id: movie.id,
       rating,
       comment,
     }).then(() => {
-      // Ajoute dans le localStorage
+      // Ajoute dans Storage
       const newComment = {
         text: comment,
         rating,

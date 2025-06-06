@@ -5,7 +5,7 @@ import Movie from '../entities/movie.js';
 
 const router = express.Router();
 
-// POST /ratings : ajoute ou met à jour une note
+// ajoute ou met à jour notre note
 router.post('/', async (req, res) => {
   const { user_id, movie_id, rating, comment } = req.body;
   if (!user_id || !movie_id || !rating) {
@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
 
   const ratingsRepo = appDataSource.getRepository(Ratings);
 
-  // Vérifie si une note existe déjà pour cet utilisateur et ce film
+  // check si une note existe déjà pour cet utilisateur et ce film
   let existing = await ratingsRepo.findOne({ where: { user_id, movie_id } });
   if (existing) {
     existing.rating = rating;
@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /ratings?user_id=...&movie_id=...
+
 router.get('/', async (req, res) => {
   const { user_id, movie_id } = req.query;
   if (!user_id || !movie_id) return res.status(400).json({ error: 'user_id et movie_id requis' });

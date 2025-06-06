@@ -8,7 +8,7 @@ import GENRES from './genres';
 import axios from 'axios';
 import './Home.css';
 
-localStorage.removeItem('introEnded'); // Force l'affichage de l'intro à chaque F5
+localStorage.removeItem('introEnded'); 
 
 function Home({ userId, setUserId }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,47 +22,32 @@ function Home({ userId, setUserId }) {
   const [randomMovie, setRandomMovie] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Carrousel 2 rangées
+  // Déroulement des films
   const moviesPerRow = 7;
   const rowsCount = 2;
   const moviesPerSlide = moviesPerRow * rowsCount;
 
-  // Splash screen
+  
   useEffect(() => {
     const introAlreadyEnded = localStorage.getItem('introEnded') === 'true';
     setIntroEnded(introAlreadyEnded);
   }, []);
 
-  // Scroll to top button
+  // button pour envoyer en haut de la page
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 300);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Reset pagination on filter change
+  // On reset quand on change de genre de film, on revient à 0 en gros et refresh
   useEffect(() => {
     setPage(1);
     setCurrentSlide(0);
   }, [searchTerm, type, genre, showSuggestions]);
 
-  // Suggestions personnalisées selon les films notés
-  function getUserPreferredGenres() {
-    const rated = JSON.parse(localStorage.getItem('rated_movies') || '[]');
-    if (rated.length === 0) return [];
-    const genreCount = {};
-    rated.forEach(f => {
-      (f.genre_ids || []).forEach(gid => {
-        genreCount[gid] = (genreCount[gid] || 0) + 1;
-      });
-    });
-    return Object.entries(genreCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 2)
-      .map(([gid]) => gid);
-  }
-
-  // Fetch movies
+  
+  // Appelle de useFetchMovies
   const { items, loading, error } = useFetchMovies(
     searchTerm,
     page,
@@ -70,7 +55,7 @@ function Home({ userId, setUserId }) {
     showSuggestions && getUserPreferredGenres().length > 0 ? getUserPreferredGenres().join(',') : genre
   );
 
-  // Filter items
+  // Si tv ou film 
   const filteredItems = items.filter((item) => {
     if (type === 'movie') {
       return item.media_type === 'movie' || item.type === 'movie';
@@ -80,13 +65,13 @@ function Home({ userId, setUserId }) {
     return true;
   });
 
-  // Carousel calculations pour 2 rangées
+  //Déroulement des films
   const totalSlides = Math.max(1, Math.ceil(filteredItems.length / moviesPerSlide));
   const startIdx = currentSlide * moviesPerSlide;
   const endIdx = startIdx + moviesPerSlide;
   const visibleMovies = filteredItems.slice(startIdx, endIdx);
 
-  // Genres
+  // Genres bibliothèque
   const MOVIE_GENRE_IDS = [
     28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37
   ];
@@ -98,13 +83,13 @@ function Home({ userId, setUserId }) {
     genreIdsToShow.includes(Number(id))
   );
 
-  // Splash screen end
+  // Intro
   function handleIntroEnd() {
     setIntroEnded(true);
     localStorage.setItem('introEnded', 'true');
   }
 
-  // Surprise video
+  // Surprise video, on rickroll ici
   function handleLoadMore() {
     setShowVideo(true);
   }
@@ -113,12 +98,12 @@ function Home({ userId, setUserId }) {
     setPage((p) => p + 1);
   }
 
-  // Scroll to top
+  // Pour aller jusqu'en haut
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // Movie aléatoire
+  // Film/movie aléatoire
   function handleRandomMovie() {
     if (filteredItems.length > 0) {
       const random = filteredItems[Math.floor(Math.random() * filteredItems.length)];
@@ -139,7 +124,7 @@ function Home({ userId, setUserId }) {
     setCurrentSlide(0);
   }
 
-  // Overlay random movie
+  // affichage aléatoire
   const randomMovieOverlay = randomMovie && (
     <div
       style={{
